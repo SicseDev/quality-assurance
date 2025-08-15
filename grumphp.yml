@@ -1,54 +1,5 @@
-grumphp:
-  git_hook_variables:
-    EXEC_GRUMPHP_COMMAND: ddev exec php
-  ascii:
-    failed: failed.txt
-    succeeded: succeeded.txt
-  tasks:
-    composer:
-      strict: true
-    composer_normalize:
-      indent_size: 4
-      indent_style: space
-    file_size: ~
-    git_commit_message:
-      enforce_no_subject_trailing_period: false
-    phpcs:
-      standard:
-        - Drupal
-        - DrupalPractice
-      triggered_by:
-        - css
-        - inc
-        - info
-        - install
-        - md
-        - module
-        - php
-        - profile
-        - test
-        - theme
-        - txt
-        - yml
-    phpstan:
-      level: 4
-      triggered_by:
-        - inc
-        - install
-        - module
-        - php
-        - profile
-        - test
-        - theme
-    phpversion: ~
-    rector:
-      triggered_by:
-        - inc
-        - install
-        - module
-        - php
-        - profile
-        - test
-        - theme
-    securitychecker_composeraudit: ~
-    twigcsfixer: ~
+imports:
+  - { resource: config/grumphp.yml }
+parameters:
+  phpstan.level: 10
+  rector.config: ~
