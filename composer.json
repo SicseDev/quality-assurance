@@ -2,6 +2,7 @@
     "name": "sicse/quality-assurance",
     "description": "Shared configuration and tools for automated code quality checks, standards enforcement, and best practices across Drupal projects.",
     "license": "GPL-2.0-or-later",
+    "type": "composer-plugin",
     "authors": [
         {
             "name": "Niels Sluijs",
@@ -10,6 +11,7 @@
     ],
     "require": {
         "php": ">=8.3",
+        "composer-plugin-api": "^2.6",
         "drupal/coder": "^8.3",
         "ekino/phpstan-banned-code": "^3.0",
         "ergebnis/composer-normalize": "^2.47",
@@ -20,8 +22,24 @@
         "phpstan/extension-installer": "^1.4",
         "vincentlanglet/twig-cs-fixer": "^3.9"
     },
+    "require-dev": {
+        "composer/composer": "^2.8",
+        "drupal/core": "^11.2",
+        "mikey179/vfsstream": "^1.6",
+        "phpunit/phpunit": "^12.3"
+    },
     "minimum-stability": "dev",
     "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "Sicse\\QualityAssurance\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Sicse\\QualityAssurance\\Tests\\": "tests/"
+        }
+    },
     "config": {
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true,
@@ -30,5 +48,8 @@
             "phpstan/extension-installer": true
         },
         "sort-packages": true
+    },
+    "extra": {
+        "class": "Sicse\\QualityAssurance\\Composer\\GrumphpConfigPlugin"
     }
 }

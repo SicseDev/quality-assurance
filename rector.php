@@ -11,6 +11,11 @@ use Rector\Config\RectorConfig;
 
 return RectorConfig::configure()
   ->withRootFiles()
+  ->withPaths([
+    __DIR__ . '/config',
+    __DIR__ . '/src',
+    __DIR__ . '/tests',
+  ])
   ->withPhpSets()
   ->withPreparedSets(
     deadCode: TRUE,
@@ -33,4 +38,4 @@ return RectorConfig::configure()
     phpunit: TRUE,
     symfony: TRUE,
   )
-  ->withImportNames();
+  ->withImportNames(importShortClasses: FALSE);
