@@ -6,11 +6,11 @@ namespace Sicse\QualityAssurance\Composer;
 
 use Composer\Composer;
 use Composer\EventDispatcher\EventSubscriberInterface;
-use Composer\Installer\PackageEvent;
 use Composer\IO\IOInterface;
-use Composer\Plugin\PluginInterface;
-use Composer\Script\ScriptEvents;
 use Composer\Json\JsonFile;
+use Composer\Plugin\PluginInterface;
+use Composer\Script\Event;
+use Composer\Script\ScriptEvents;
 
 /**
  * Defines Composer a plugin to manage GrumPHP configuration in Drupal projects.
@@ -79,10 +79,10 @@ class GrumphpConfigPlugin implements PluginInterface, EventSubscriberInterface {
    * if it does not exist, pointing to the grumphp.yml file provided in this
    * project.
    *
-   * @param \Composer\Installer\PackageEvent $packageEvent
+   * @param \Composer\Script\Event $event
    *   The event triggered by Composer.
    */
-  public function addGrumphpConfig(PackageEvent $packageEvent): void {
+  public function addGrumphpConfig(Event $event): void {
     // There is nothing to do when the root-project already has a grumphp.yml
     // configuration file or when the 'config-default-path' is already set.
     if ($this->hasGrumphpConfigFile() || $this->hasGrumphpConfigInComposer()) {

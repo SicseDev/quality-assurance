@@ -6,9 +6,9 @@ namespace Sicse\QualityAssurance\Tests\Composer;
 
 use Composer\Composer;
 use Composer\Config;
-use Composer\Installer\PackageEvent;
 use Composer\IO\IOInterface;
 use Composer\Package\RootPackage;
+use Composer\Script\Event;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -88,7 +88,7 @@ final class GrumphpConfigPluginTest extends TestCase {
     ], $this->vfsStreamDirectory);
 
     // Execute the function that we are testing.
-    $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(PackageEvent::class));
+    $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(Event::class));
 
     // Verify no config added.
     $config_path = $this->getGrumphpConfigPath();
@@ -114,7 +114,7 @@ final class GrumphpConfigPluginTest extends TestCase {
       ->willReturn($extra);
 
     // Execute the function that we are testing.
-    $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(PackageEvent::class));
+    $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(Event::class));
 
     // Verify config not changed.
     $config_path = $this->getGrumphpConfigPath();
@@ -135,7 +135,7 @@ final class GrumphpConfigPluginTest extends TestCase {
       ->willReturn(FALSE);
 
     // Execute the function that we are testing.
-    $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(PackageEvent::class));
+    $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(Event::class));
 
     // Verify no config added.
     $config_path = $this->getGrumphpConfigPath();
@@ -156,7 +156,7 @@ final class GrumphpConfigPluginTest extends TestCase {
       ->willReturn(TRUE);
 
     // Execute the function that we are testing.
-    $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(PackageEvent::class));
+    $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(Event::class));
 
     // Verify config added.
     $config_path = $this->getGrumphpConfigPath();
