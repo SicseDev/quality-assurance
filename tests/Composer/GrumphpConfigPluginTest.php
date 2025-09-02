@@ -12,6 +12,7 @@ use Composer\Script\Event;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
@@ -27,6 +28,11 @@ final class GrumphpConfigPluginTest extends TestCase {
    * The virtual file system.
    */
   private vfsStreamDirectory $vfsStreamDirectory;
+
+  /**
+   * The composer instance.
+   */
+  private Composer&Stub $composer;
 
   /**
    * The IO interface instance.
@@ -57,16 +63,15 @@ final class GrumphpConfigPluginTest extends TestCase {
     // Set up all needed test doubles.
     $this->rootPackage = $this->createStub(RootPackage::class);
     $config = $this->createStub(Config::class);
-    $composer = $this->createStub(Composer::class);
+    $this->composer = $this->createStub(Composer::class);
     $this->io = $this->createMock(IOInterface::class);
 
-    $composer->method('getPackage')->willReturn($this->rootPackage);
-    $composer->method('getConfig')->willReturn($config);
+    $this->composer->method('getPackage')->willReturn($this->rootPackage);
+    $this->composer->method('getConfig')->willReturn($config);
     $config->method('get')->with('vendor-dir')->willReturn(vfsStream::url('root/vendor'));
 
     // Create plugin instance.
     $this->grumphpConfigPlugin = new GrumphpConfigPlugin();
-    $this->grumphpConfigPlugin->activate($composer, $this->io);
   }
 
   /**
@@ -87,7 +92,9 @@ final class GrumphpConfigPluginTest extends TestCase {
       'grumphp.yml' => 'existing config',
     ], $this->vfsStreamDirectory);
 
-    // Execute the function that we are testing.
+    // Activate the plugin and execute the function that we are testing.
+    $this->grumphpConfigPlugin->activate($this->composer, $this->io);
+
     $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(Event::class));
 
     // Verify no config added.
@@ -99,8 +106,14 @@ final class GrumphpConfigPluginTest extends TestCase {
    * Tests the addGrumphpConfig method with existing config in composer.json.
    */
   public function testAddGrumphpConfigWithExistingComposerConfig(): void {
-    // Setup composer.json with existing GrumPHP config.
-    $extra = ['grumphp' => ['config-default-path' => 'some/path']];
+    // Set up composer.json with an existing config-default-path.
+    $extra = [
+      'grumphp' => [
+        'config-default-path' => 'some/other/path.yml',
+      ],
+    ];
+
+    // Create composer.json with the specified extra configuration.
     vfsStream::create([
       'composer.json' => json_encode([
         'name' => 'test/project',
@@ -108,17 +121,17 @@ final class GrumphpConfigPluginTest extends TestCase {
       ], JSON_THROW_ON_ERROR),
     ], $this->vfsStreamDirectory);
 
-    // Ensure the extra configuration is returned when the getExtra() function
-    // is used.
+    // Mock the root package to return the existing extra configuration.
     $this->rootPackage->method('getExtra')
       ->willReturn($extra);
 
-    // Execute the function that we are testing.
+    // Activate the plugin and execute the function that we are testing.
+    $this->grumphpConfigPlugin->activate($this->composer, $this->io);
     $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(Event::class));
 
     // Verify config not changed.
     $config_path = $this->getGrumphpConfigPath();
-    $this->assertSame('some/path', $config_path, 'GrumPHP config should not be modified when it already exists in composer.json.');
+    $this->assertSame('some/other/path.yml', $config_path, 'GrumPHP config should not be modified when it already exists in composer.json.');
   }
 
   /**
@@ -134,7 +147,8 @@ final class GrumphpConfigPluginTest extends TestCase {
       ->with(GrumphpConfigPlugin::GRUMPHP_CONFIRMATION_QUESTION)
       ->willReturn(FALSE);
 
-    // Execute the function that we are testing.
+    // Activate the plugin and execute the function that we are testing.
+    $this->grumphpConfigPlugin->activate($this->composer, $this->io);
     $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(Event::class));
 
     // Verify no config added.
@@ -155,7 +169,8 @@ final class GrumphpConfigPluginTest extends TestCase {
       ->with(GrumphpConfigPlugin::GRUMPHP_CONFIRMATION_QUESTION)
       ->willReturn(TRUE);
 
-    // Execute the function that we are testing.
+    // Activate the plugin and execute the function that we are testing.
+    $this->grumphpConfigPlugin->activate($this->composer, $this->io);
     $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(Event::class));
 
     // Verify config added.
@@ -165,6 +180,187 @@ final class GrumphpConfigPluginTest extends TestCase {
       $config_path,
       'GrumPHP config should be added when the user consents.',
     );
+  }
+
+  /**
+   * Tests the uninstall method with different configurations.
+   *
+   * @param array<string, mixed> $initial_composer_json
+   *   The initial composer.json configuration.
+   * @param array<string, mixed> $expected_composer_json
+   *   The expected composer.json configuration after uninstall.
+   */
+  #[DataProvider('uninstallConfigurationProvider')]
+  public function testUninstall(array $initial_composer_json, array $expected_composer_json): void {
+    // Setup composer.json with the provided initial configuration.
+    vfsStream::create([
+      'composer.json' => json_encode($initial_composer_json, JSON_THROW_ON_ERROR),
+    ], $this->vfsStreamDirectory);
+
+    // Mock the root package to return the initial extra configuration.
+    $this->rootPackage->method('getExtra')
+      ->willReturn($initial_composer_json['extra'] ?? []);
+
+    // Trigger the uninstall function.
+    $this->grumphpConfigPlugin->uninstall($this->composer, $this->io);
+
+    // Verify the composer.json reflects the expected final configuration.
+    $result_composer_json = $this->getComposerJson();
+    $this->assertSame($expected_composer_json, $result_composer_json, 'composer.json should match the expected configuration after uninstall.');
+  }
+
+  /**
+   * Data provider for testUninstall.
+   */
+  public static function uninstallConfigurationProvider(): \Iterator {
+    yield 'empty configuration' => [
+      [],
+      [],
+    ];
+
+    yield 'only project information' => [
+      [
+        'name' => 'test/project',
+      ],
+      [
+        'name' => 'test/project',
+      ],
+    ];
+
+    yield 'empty extra configuration' => [
+      [
+        'name' => 'test/project',
+        'extra' => [],
+      ],
+      [
+        'name' => 'test/project',
+        'extra' => [],
+      ],
+    ];
+
+    yield 'empty GrumPHP configuration' => [
+      [
+        'name' => 'test/project',
+        'extra' => [
+          'grumphp' => [],
+        ],
+      ],
+      [
+        'name' => 'test/project',
+        'extra' => [
+          'grumphp' => [],
+        ],
+      ],
+    ];
+
+    yield 'other extra configuration' => [
+      [
+        'name' => 'test/project',
+        'extra' => [
+          'some-config' => 'value',
+        ],
+      ],
+      [
+        'name' => 'test/project',
+        'extra' => [
+          'some-config' => 'value',
+        ],
+      ],
+    ];
+
+    yield 'other GrumPHP configuration' => [
+      [
+        'name' => 'test/project',
+        'extra' => [
+          'grumphp' => [
+            'some-grumphp-config' => 'value',
+          ],
+        ],
+      ],
+      [
+        'name' => 'test/project',
+        'extra' => [
+          'grumphp' => [
+            'some-grumphp-config' => 'value',
+          ],
+        ],
+      ],
+    ];
+
+    yield 'different GrumPHP config default path configuration' => [
+      [
+        'name' => 'test/project',
+        'extra' => [
+          'grumphp' => [
+            'config-default-path' => 'some/other/path.yml',
+          ],
+        ],
+      ],
+      [
+        'name' => 'test/project',
+        'extra' => [
+          'grumphp' => [
+            'config-default-path' => 'some/other/path.yml',
+          ],
+        ],
+      ],
+    ];
+
+    yield 'our config default path configuration' => [
+      [
+        'name' => 'test/project',
+        'extra' => [
+          'grumphp' => [
+            'config-default-path' => GrumphpConfigPlugin::GRUMPHP_CONFIG_PATH,
+          ],
+        ],
+      ],
+      [
+        'name' => 'test/project',
+      ],
+    ];
+
+    yield 'our config default path with additional GrumPHP configuration' => [
+      [
+        'name' => 'test/project',
+        'extra' => [
+          'grumphp' => [
+            'some-grumphp-config' => 'value',
+            'config-default-path' => GrumphpConfigPlugin::GRUMPHP_CONFIG_PATH,
+            'another-grumphp-config' => 'another-value',
+          ],
+        ],
+      ],
+      [
+        'name' => 'test/project',
+        'extra' => [
+          'grumphp' => [
+            'some-grumphp-config' => 'value',
+            'another-grumphp-config' => 'another-value',
+          ],
+        ],
+      ],
+    ];
+
+    yield 'our config default path and other extra configuration' => [
+      [
+        'name' => 'test/project',
+        'extra' => [
+          'some-config' => 'value',
+          'grumphp' => [
+            'config-default-path' => GrumphpConfigPlugin::GRUMPHP_CONFIG_PATH,
+          ],
+          'another-config' => 'another-value',
+        ],
+      ],
+      [
+        'name' => 'test/project',
+        'extra' => [
+          'some-config' => 'value',
+          'another-config' => 'another-value',
+        ],
+      ],
+    ];
   }
 
   /**

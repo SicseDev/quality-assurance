@@ -60,7 +60,15 @@ class GrumphpConfigPlugin implements PluginInterface, EventSubscriberInterface {
   /**
    * {@inheritdoc}
    */
-  public function uninstall(Composer $composer, IOInterface $io): void {}
+  public function uninstall(Composer $composer, IOInterface $io): void {
+    $this->composer = $composer;
+    $this->io = $io;
+
+    // Only remove the configuration if it's set to our package's grumphp.yml.
+    if ($this->hasGrumphpConfigInComposer(self::GRUMPHP_CONFIG_PATH)) {
+      $this->removeGrumphpConfigPath();
+    }
+  }
 
   /**
    * {@inheritdoc}
@@ -97,7 +105,7 @@ class GrumphpConfigPlugin implements PluginInterface, EventSubscriberInterface {
 
     // Update the composer.json file with the 'config-default-path' pointing to
     // the grumphp.yml provided in this project.
-    $this->updateComposerJson();
+    $this->addGrumphpConfigPath(self::GRUMPHP_CONFIG_PATH);
   }
 
   /**
@@ -115,15 +123,33 @@ class GrumphpConfigPlugin implements PluginInterface, EventSubscriberInterface {
   }
 
   /**
-   * Checks if GrumPHP configuration is already set in composer.json.
+   * Checks if GrumPHP configuration is set in composer.json.
+   *
+   * @param string|null $path
+   *   If provided, checks if the 'config-default-path' matches this path. In
+   *   case of NULL, only checks if any 'config-default-path' is set.
    *
    * @return bool
-   *   TRUE if the configuration is already set, FALSE otherwise.
+   *   TRUE if the configuration meets the requirements, FALSE otherwise.
    */
-  private function hasGrumphpConfigInComposer(): bool {
+  private function hasGrumphpConfigInComposer(?string $path = NULL): bool {
     $extra = $this->composer->getPackage()->getExtra();
 
-    return is_array($extra['grumphp'] ?? NULL) && isset($extra['grumphp']['config-default-path']);
+    if (!isset($extra['grumphp']) || !is_array($extra['grumphp'])) {
+      return FALSE;
+    }
+
+    if (!isset($extra['grumphp']['config-default-path'])) {
+      return FALSE;
+    }
+
+    // If we only need to check that any config exists, we can return true now.
+    if ($path === NULL) {
+      return TRUE;
+    }
+
+    // Check if the path matches our specific package path.
+    return $extra['grumphp']['config-default-path'] === self::GRUMPHP_CONFIG_PATH;
   }
 
   /**
@@ -137,12 +163,13 @@ class GrumphpConfigPlugin implements PluginInterface, EventSubscriberInterface {
   }
 
   /**
-   * Updates the composer.json file with GrumPHP configuration.
+   * Adds the GrumPHP configuration path to composer.json.
+   *
+   * @param string $path
+   *   The path to the GrumPHP configuration file.
    */
-  private function updateComposerJson(): void {
-    $root_dir = $this->composer->getConfig()->get('vendor-dir') . '/..';
-    $composer_file = sprintf('%s/composer.json', $root_dir);
-    $jsonFile = new JsonFile($composer_file);
+  private function addGrumphpConfigPath(string $path): void {
+    $jsonFile = $this->getComposerJsonFile();
     $config = (array) $jsonFile->read();
 
     // Ensure 'extra' is an array.
@@ -156,11 +183,62 @@ class GrumphpConfigPlugin implements PluginInterface, EventSubscriberInterface {
     }
 
     // Set the config-default-path.
-    $config['extra']['grumphp']['config-default-path'] = self::GRUMPHP_CONFIG_PATH;
-
+    $config['extra']['grumphp']['config-default-path'] = $path;
     $jsonFile->write($config);
+    $this->io->write(sprintf('<info>GrumPHP configuration path set to %s</info>', $path));
+  }
 
-    $this->io->write(sprintf('<info>GrumPHP configuration path set to %s</info>', self::GRUMPHP_CONFIG_PATH));
+  /**
+   * Removes the GrumPHP configuration path from composer.json.
+   */
+  private function removeGrumphpConfigPath(): void {
+    $jsonFile = $this->getComposerJsonFile();
+    $config = (array) $jsonFile->read();
+
+    // Ensure 'extra' is an array before accessing 'grumphp'.
+    if (!isset($config['extra']) || !is_array($config['extra'])) {
+      return;
+    }
+
+    // Ensure 'grumphp' is an array before accessing 'config-default-path'.
+    if (!isset($config['extra']['grumphp']) || !is_array($config['extra']['grumphp'])) {
+      return;
+    }
+
+    // If the necessary structure doesn't exist, there's nothing to remove.
+    if (!isset($config['extra']['grumphp']['config-default-path'])) {
+      return;
+    }
+
+    // Remove the config-default-path.
+    unset($config['extra']['grumphp']['config-default-path']);
+
+    // Clean up empty structures. We deliberately only clean up when the grumphp
+    // and extra sections were set to store the config-default-path.
+    if (empty($config['extra']['grumphp'])) {
+      unset($config['extra']['grumphp']);
+    }
+
+    if (empty($config['extra'])) {
+      unset($config['extra']);
+    }
+
+    // Write the updated configuration back to composer.json.
+    $jsonFile->write($config);
+    $this->io->write('<info>GrumPHP configuration has been removed from composer.json</info>');
+  }
+
+  /**
+   * Gets the JsonFile object for the composer.json file in the project root.
+   *
+   * @return \Composer\Json\JsonFile
+   *   The JsonFile object for composer.json.
+   */
+  private function getComposerJsonFile(): JsonFile {
+    $vendor_dir = $this->composer->getConfig()->get('vendor-dir');
+    $root_dir = $vendor_dir . '/..';
+    $composer_file = $root_dir . '/composer.json';
+    return new JsonFile($composer_file);
   }
 
 }
