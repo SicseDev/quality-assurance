@@ -164,51 +164,41 @@ final class GrumphpConfigPluginTest extends TestCase {
   }
 
   /**
-   * Tests the addGrumphpConfig method when user declines to add config.
+   * Tests the addGrumphpConfig method with different user responses.
+   *
+   * @param bool $user_consents
+   *   Whether the user consents to adding the config.
+   * @param string|null $expected_path
+   *   The expected config path in composer.json after the operation, or NULL
+   *   if none.
    */
-  public function testAddGrumphpConfigWhenUserDeclines(): void {
+  #[DataProvider('addGrumphpConfigUserResponseProvider')]
+  public function testAddGrumphpConfigUserResponse(bool $user_consents, ?string $expected_path): void {
     // The default behavior of the provided test doubles is that there is no
     // grumphp.yml file or config-default-path set. In that case we expect that
-    // the plugin asks the user for consent. In this test case we mock the IO
-    // interface to simulate the user declining to add the config.
+    // the plugin asks the user for consent.
     $this->io->expects($this->once())
       ->method('askConfirmation')
       ->with(GrumphpConfigPlugin::GRUMPHP_CONFIRMATION_QUESTION)
-      ->willReturn(FALSE);
+      ->willReturn($user_consents);
 
     // Activate the plugin and execute the function that we are testing.
     $this->grumphpConfigPlugin->activate($this->composer, $this->io);
     $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(Event::class));
 
-    // Verify no config added.
     $config_path = $this->getGrumphpConfigPath();
-    $this->assertEmpty($config_path, 'GrumPHP config should not be added when the user declines.');
+    $this->assertSame($expected_path, $config_path);
   }
 
   /**
-   * Tests the addGrumphpConfig method when user agrees to add config.
+   * Data provider for testAddGrumphpConfigUserResponse.
+   *
+   * @return \Iterator<string, array{0: bool, 1: string|null}>
+   *   Yields test cases with user consent and expected config path.
    */
-  public function testAddGrumphpConfigWithUserConsent(): void {
-    // The default behavior of the provided test doubles is that there is no
-    // grumphp.yml file or config-default-path set. In that case we expect that
-    // the plugin asks the user for consent. In this test case we mock the IO
-    // interface to simulate the user agreeing to add the config.
-    $this->io->expects($this->once())
-      ->method('askConfirmation')
-      ->with(GrumphpConfigPlugin::GRUMPHP_CONFIRMATION_QUESTION)
-      ->willReturn(TRUE);
-
-    // Activate the plugin and execute the function that we are testing.
-    $this->grumphpConfigPlugin->activate($this->composer, $this->io);
-    $this->grumphpConfigPlugin->addGrumphpConfig($this->createStub(Event::class));
-
-    // Verify config added.
-    $config_path = $this->getGrumphpConfigPath();
-    $this->assertSame(
-      GrumphpConfigPlugin::GRUMPHP_CONFIG_PATH,
-      $config_path,
-      'GrumPHP config should be added when the user consents.',
-    );
+  public static function addGrumphpConfigUserResponseProvider(): \Iterator {
+    yield 'user declines' => [FALSE, NULL];
+    yield 'user consents' => [TRUE, GrumphpConfigPlugin::GRUMPHP_CONFIG_PATH];
   }
 
   /**
