@@ -75,6 +75,35 @@ final class GrumphpConfigPluginTest extends TestCase {
   }
 
   /**
+   * Ensures that the grumphp.yml file referenced in GrumphpConfigPlugin exists.
+   */
+  public function testGrumphpConfigExists(): void {
+    // Determine the root directory of this package, assuming this test file
+    // is located in 'tests/Composer'.
+    $package_root = dirname(__DIR__, 2);
+
+    // Construct the location of the grumphp.yml file that should be provided by
+    // this package. As this package is not installed in
+    // 'vendor/sicse/quality-assurance', that part should be removed from the
+    // GrumphpConfigPlugin::GRUMPHP_CONFIG_PATH constant.
+    $vendor_prefix = 'vendor/sicse/quality-assurance/';
+    $config_path = GrumphpConfigPlugin::GRUMPHP_CONFIG_PATH;
+
+    // If the path starts with the vendor prefix, remove it.
+    $relative_path = $config_path;
+    if (str_starts_with($config_path, $vendor_prefix)) {
+      $relative_path = substr($config_path, strlen($vendor_prefix));
+    }
+
+    $grumphp_config_path = sprintf('%s/%s', $package_root, $relative_path);
+
+    // Verify that the file exists and is not empty.
+    $this->assertFileExists($grumphp_config_path, 'grumphp.yml configuration file, meant for projects using this plugin, cannot be found.');
+    $this->assertFileIsReadable($grumphp_config_path, 'grumphp.yml configuration file, meant for projects using this plugin, should be readable.');
+    $this->assertGreaterThan(0, filesize($grumphp_config_path), 'grumphp.yml configuration file, meant for projects using this plugin, should not be empty.');
+  }
+
+  /**
    * Tests that the plugin subscribes to the correct events.
    */
   public function testGetSubscribedEvents(): void {
