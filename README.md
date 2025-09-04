@@ -1,5 +1,11 @@
 # Quality Assurance
 
+[![CI](https://github.com/SicseDev/quality-assurance/actions/workflows/ci.yml/badge.svg)](https://github.com/SicseDev/quality-assurance/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/github/SicseDev/quality-assurance/graph/badge.svg?token=B1OW9O6HLX)](https://codecov.io/github/SicseDev/quality-assurance)
+[![Latest Stable Version](http://poser.pugx.org/sicse/quality-assurance/v)](https://packagist.org/packages/sicse/quality-assurance)
+[![Total Downloads](http://poser.pugx.org/sicse/quality-assurance/downloads)](https://packagist.org/packages/sicse/quality-assurance)
+[![License](http://poser.pugx.org/sicse/quality-assurance/license)](https://packagist.org/packages/sicse/quality-assurance)
+
 A Composer plugin and configuration package for Drupal projects, designed to
 enforce code quality, coding standards, and best practices automatically. Ideal
 for agencies, maintainers, and teams seeking consistent code review automation
