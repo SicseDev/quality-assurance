@@ -9,6 +9,7 @@ use Composer\Config;
 use Composer\IO\IOInterface;
 use Composer\Package\RootPackage;
 use Composer\Script\Event;
+use Composer\Script\ScriptEvents;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -108,8 +109,10 @@ final class GrumphpConfigPluginTest extends TestCase {
    */
   public function testGetSubscribedEvents(): void {
     $events = GrumphpConfigPlugin::getSubscribedEvents();
-    $this->assertArrayHasKey('post-install-cmd', $events);
-    $this->assertEquals('addGrumphpConfig', $events['post-install-cmd']);
+    $this->assertArrayHasKey(ScriptEvents::POST_INSTALL_CMD, $events);
+    $this->assertEquals('addGrumphpConfig', $events[ScriptEvents::POST_INSTALL_CMD]);
+    $this->assertArrayHasKey(ScriptEvents::POST_UPDATE_CMD, $events);
+    $this->assertEquals('addGrumphpConfig', $events[ScriptEvents::POST_UPDATE_CMD]);
   }
 
   /**

@@ -76,6 +76,7 @@ class GrumphpConfigPlugin implements PluginInterface, EventSubscriberInterface {
   public static function getSubscribedEvents(): array {
     return [
       ScriptEvents::POST_INSTALL_CMD => 'addGrumphpConfig',
+      ScriptEvents::POST_UPDATE_CMD => 'addGrumphpConfig',
     ];
   }
 
