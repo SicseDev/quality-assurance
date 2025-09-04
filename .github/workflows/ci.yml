@@ -18,7 +18,6 @@ jobs:
         with:
           php-version: 8.3
           coverage: none
-          tools: composer
 
       - name: Validate composer.json
         run: composer validate --strict
@@ -40,16 +39,11 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: 8.3
-          coverage: none
-          tools: composer
 
       - name: Install dependencies
         run: composer install --no-progress --prefer-dist --no-interaction
 
-      - name: Run PHPUnit
-        run: vendor/bin/phpunit --testdox
-
-      - name: Run PHPUnit with coverage
+      - name: Run tests and collect coverage
         run: vendor/bin/phpunit --coverage-clover=coverage.xml
 
       - name: Upload coverage to Codecov
