@@ -1,5 +1,5 @@
 imports:
   - { resource: config/grumphp.yml }
 parameters:
-  phpstan.level: 10
-  rector.config: ~
+  convention.phpstan_level: 10
+  convention.rector_config: ~

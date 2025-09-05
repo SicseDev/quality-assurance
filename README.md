@@ -84,14 +84,14 @@ For example:
 imports:
   - { resource: vendor/sicse/quality-assurance/config/grumphp.yml }
 parameters:
-  phpstan.level: 8
+  convention.phpstan_level: 8
 ```
 
 If you provide your own `grumphp.yml`, do not set the GrumPHP
 `config-default-path` to the package's default config.
 
-When providing your own `rector.php`, make sure to update the `rector.config`
-parameter in your `grumphp.yml` accordingly.
+When providing your own `rector.php`, make sure to update the
+`convention.rector_config` parameter in your `grumphp.yml` accordingly.
 
 ## Contributing
 

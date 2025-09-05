@@ -1,6 +1,6 @@
 parameters:
-  phpstan.level: 4
-  rector.config: vendor/sicse/quality-assurance/config/rector.php
+  convention.phpstan_level: 4
+  convention.rector_config: vendor/sicse/quality-assurance/config/rector.php
 grumphp:
   git_hook_variables:
     EXEC_GRUMPHP_COMMAND: ddev exec php
@@ -34,7 +34,7 @@ grumphp:
         - txt
         - yml
     phpstan:
-      level: "%phpstan.level%"
+      level: "%convention.phpstan_level%"
       triggered_by:
         - inc
         - install
@@ -45,7 +45,7 @@ grumphp:
         - theme
     phpversion: ~
     rector:
-      config: "%rector.config%"
+      config: "%convention.rector_config%"
       triggered_by:
         - inc
         - install
