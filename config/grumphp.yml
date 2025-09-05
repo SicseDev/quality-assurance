@@ -1,4 +1,5 @@
 parameters:
+  convention.phpstan_configuration: vendor/sicse/quality-assurance/config/phpstan.neon
   convention.phpstan_level: 4
   convention.rector_config: vendor/sicse/quality-assurance/config/rector.php
 grumphp:
@@ -34,6 +35,7 @@ grumphp:
         - txt
         - yml
     phpstan:
+      configuration: "%convention.phpstan_configuration%"
       level: "%convention.phpstan_level%"
       triggered_by:
         - inc
