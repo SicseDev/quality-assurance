@@ -205,6 +205,18 @@ final class GrumphpConfigPluginTest extends TestCase {
   }
 
   /**
+   * Tests the deactivate method.
+   */
+  public function testDeactivate(): void {
+    // Since the method is empty, we're mainly testing that it doesn't throw
+    // exceptions when called.
+    $this->expectNotToPerformAssertions();
+
+    // Call the deactivate method with our test doubles.
+    $this->grumphpConfigPlugin->deactivate($this->composer, $this->io);
+  }
+
+  /**
    * Tests the uninstall method with different configurations.
    *
    * @param array<string, mixed> $initial_composer_json
